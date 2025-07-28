@@ -45,13 +45,13 @@
   <script>
     // Your Firebase config - replace with your real config
     const firebaseConfig = {
-  apiKey: "AIzaSyC4tOkLBI1WOFVwWmvIYV4MJ6RotvL1Rhk",
-  authDomain: "ocms-rock-a-thon.firebaseapp.com",
-  projectId: "ocms-rock-a-thon",
-  storageBucket: "ocms-rock-a-thon.firebasestorage.app",
-  messagingSenderId: "1073365080543",
-  appId: "1:1073365080543:web:02ee17b6576709d89a4c6a",
-  measurementId: "G-R47NH1FWWV"
+      apiKey: "AIzaSyC4tOkLBI1WOFVwWmvIYV4MJ6RotvL1Rhk",
+      authDomain: "ocms-rock-a-thon.firebaseapp.com",
+      projectId: "ocms-rock-a-thon",
+      storageBucket: "ocms-rock-a-thon.firebasestorage.app",
+      messagingSenderId: "1073365080543",
+      appId: "1:1073365080543:web:02ee17b6576709d89a4c6a",
+      measurementId: "G-R47NH1FWWV"
     };
 
     // Initialize Firebase
@@ -71,7 +71,7 @@
     }
 
     function validateEmailDomain(email) {
-      return email.endsWith("@oconeeschools.org.org"); // replace yourdomain.org with your domain
+      return email.endsWith("@oconeeschools.org"); // replace with your domain
     }
 
     async function handleLogin(event) {
@@ -82,7 +82,6 @@
 
       // Get inputs
       const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("password").value;
       const captchaToken = document.querySelector('[name="cf-turnstile-response"]').value;
 
       // Validate CAPTCHA
@@ -104,10 +103,11 @@
       }
 
       try {
-        // Sign in with Firebase Auth (email/password)
-        await auth.signInWithEmailAndPassword(email, password);
+        // Removed password login - you can replace this with another Firebase method if needed
+        // For now, simulate successful login or handle anonymous sign-in if needed
+        // e.g. await auth.signInAnonymously();
 
-        // Passed Firebase Auth, generate token
+        // Generate token
         const os = detectOS();
         const timestamp = Date.now();
         const tokenData = `${email}:${os}:${timestamp}`;
@@ -117,19 +117,13 @@
         localStorage.setItem("auth_token", token);
         localStorage.setItem("auth_email", email);
         localStorage.setItem("auth_os", os);
+        localStorage.setItem("auth_time", timestamp.toString());
 
         // Redirect to protected page WITHOUT token in URL
         window.location.href = `https://rock-a-thon2025.framer.website/${os}`;
 
       } catch (error) {
-        // Handle Firebase login errors
-        let message = "Login failed. Please check your credentials.";
-        if (error.code === 'auth/user-not-found') {
-          message = "User not found.";
-        } else if (error.code === 'auth/wrong-password') {
-          message = "Incorrect password.";
-        }
-        document.getElementById("errorMsg").textContent = message;
+        document.getElementById("errorMsg").textContent = "Login failed. Please try again.";
       }
     }
 
@@ -141,13 +135,13 @@
 
 <body>
   <h1>Email Authentication Required</h1>
-  <p>Enter your school email and password to continue</p>
+  <p>Enter your school email to continue</p>
 
   <form id="loginForm">
     <input type="email" id="email" placeholder="your.email@oconeeschools.org" required autocomplete="username" />
 
     <!-- Cloudflare CAPTCHA widget -->
-    <div class="cf-turnstile" data-sitekey="______" data-theme="light"></div>
+    <div class="cf-turnstile" data-sitekey="0x4AAAAAABmxgUOcsKS-XbyN" data-theme="light"></div>
 
     <button type="submit">Authenticate</button>
   </form>
