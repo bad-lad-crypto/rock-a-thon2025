@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Student Email Login</title>
+
+  <!-- Cloudflare Turnstile -->
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
+  <!-- Firebase Auth Modules -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    // 🔧 Replace with your Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyC4tOkLBI1WOFVwWmvIYV4MJ6RotvL1Rhk",
+      authDomain: "ocms-rock-a-thon.firebaseapp.com",
+      projectId: "ocms-rock-a-thon",
+      storageBucket: "ocms-rock-a-thon.firebasestorage.app",
+      messagingSenderId: "1073365080543",
+      appId: "1:1073365080543:web:02ee17b6576709d89a4c6a",
+      measurementId: "G-R47NH1FWWV"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    function detectOS() {
+      const ua = navigator.userAgent.toLowerCase();
+      if (ua.includes("cros")) return "chromebook";
+      if (/android|iphone|ipad|ipod/.test(ua)) return "mobile";
+      return "desktop";
+    }
+
+    function isStudentEmail(email) {
+      const localPart = email.split("@")[0];
+      return /\d/.test(localPart); // student if it contains a number
+    }
+
+    async function handleLogin(event) {
+      event.preventDefault();
+
+      const email = document.getElementById("email").value.trim();
+      const captchaToken = document.querySelector('[name="cf-turnstile-response"]').value;
+
+      if (!captchaToken) {
+        alert("Please complete the CAPTCHA.");
+        return;
+      }
+
+      if (!email.endsWith("@oconeeschools.org")) {
+        alert("Access denied: Please use your school email.");
+        return;
+      }
+
+      if (!isStudentEmail(email)) {
+        alert("Access denied: Teachers are disallowed.");
+        return;
+      }
+
+      const os = detectOS();
+      const token = btoa(email + ":" + os + ":" + Date.now());
+
+      sessionStorage.setItem("auth_token", token);
+      sessionStorage.setItem("auth_email", email);
+      sessionStorage.setItem("auth_os", os);
+
+      // 🔁 Redirect to your Framer site or similar
+      window.location.href = `https://rock-a-thon2025.framer.website/${os}?token=${encodeURIComponent(token)}`;
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("loginForm").addEventListener("submit", handleLogin);
+    });
+  </script>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f5f5f5;
+      text-align: center;
+      padding: 3em;
+    }
+    form {
+      display: inline-block;
+      background: white;
+      padding: 2em;
+      border-radius: 10px;
+      box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
+    }
+    input, button {
+      display: block;
+      margin: 1em auto;
+      padding: 0.75em;
+      width: 240px;
+      font-size: 1em;
+    }
+    .cf-turnstile {
+      margin: 1em auto;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Email Authentication Required</h1>
+  <p>Enter your school email to continue</p>
+
+  <form id="loginForm">
+    <input type="email" id="email" placeholder="your.email@oconeeschools.org" required />
+
+    <!-- ✅ Cloudflare CAPTCHA Widget -->
+    <div class="cf-turnstile"
+         data-sitekey="0x4AAAAAABmxgUOcsKS-XbyN"
+         data-theme="light">
+    </div>
+
+    <button type="submit">Authenticate</button>
+  </form>
+</body>
+</html>
