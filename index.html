@@ -68,7 +68,10 @@ localStorage.setItem("auth_os", os);
 
 
       // 🔁 Redirect to your Framer site or similar
-      window.location.href = `https://rock-a-thon2025.framer.website/${os}?token=${encodeURIComponent(token)}`;
+      setTimeout(() => {
+  window.location.href = `https://rock-a-thon2025.framer.website/${os}?token=${encodeURIComponent(token)}`;
+}, 2000);
+
     }
 
     window.addEventListener("DOMContentLoaded", () => {
