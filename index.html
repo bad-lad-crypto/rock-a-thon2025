@@ -8,8 +8,124 @@
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 
   <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"></script>
+  <script type="module">
+    // Import Firebase modules
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    // Your Firebase config here
+    const firebaseConfig = {
+  apiKey: "AIzaSyC4tOkLBI1WOFVwWmvIYV4MJ6RotvL1Rhk",
+  authDomain: "ocms-rock-a-thon.firebaseapp.com",
+  projectId: "ocms-rock-a-thon",
+  storageBucket: "ocms-rock-a-thon.firebasestorage.app",
+  messagingSenderId: "1073365080543",
+  appId: "1:1073365080543:web:02ee17b6576709d89a4c6a",
+  measurementId: "G-R47NH1FWWV"
+    };
+
+    // Initialize Firebase and Firestore
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    function detectOS() {
+      const ua = navigator.userAgent.toLowerCase();
+      if (ua.includes("cros")) return "chromebook";
+      if (/android|iphone|ipad|ipod/.test(ua)) return "mobile";
+      return "desktop";
+    }
+
+    function detectBrowser() {
+      const ua = navigator.userAgent;
+      if (ua.includes("Firefox")) return "Firefox";
+      if (ua.includes("Edg")) return "Edge";
+      if (ua.includes("OPR") || ua.includes("Opera")) return "Opera";
+      if (ua.includes("Chromium")) return "Chromium"; // Added Chromium detection
+      if (ua.includes("Chrome")) return "Chrome";
+      if (ua.includes("Safari")) return "Safari";
+      return "Unknown";
+    }
+
+    function isStudentEmail(email) {
+      const localPart = email.split("@")[0];
+      return /\d/.test(localPart); // true if local part contains a number
+    }
+
+    function validateEmailDomain(email) {
+      return email.endsWith("@oconeeschools.org"); // Replace with your domain
+    }
+
+    async function logAttempt(email, os, browser, success) {
+      try {
+        await addDoc(collection(db, "login_attempts"), {
+          email: email,
+          os: os,
+          browser: browser,
+          success: success,
+          timestamp: serverTimestamp()
+        });
+      } catch (e) {
+        console.error("Error logging attempt: ", e);
+      }
+    }
+
+    async function handleLogin(event) {
+      event.preventDefault();
+
+      document.getElementById("errorMsg").textContent = "";
+
+      const email = document.getElementById("email").value.trim();
+      const captchaToken = document.querySelector('[name="cf-turnstile-response"]').value;
+
+      if (!captchaToken) {
+        document.getElementById("errorMsg").textContent = "Please complete the CAPTCHA.";
+        return;
+      }
+
+      if (!validateEmailDomain(email)) {
+        document.getElementById("errorMsg").textContent = "Access denied: Please use your school email.";
+        await logAttempt(email, detectOS(), detectBrowser(), false);
+        return;
+      }
+
+      if (!isStudentEmail(email)) {
+        document.getElementById("errorMsg").textContent = "Access denied: Teachers are disallowed.";
+        await logAttempt(email, detectOS(), detectBrowser(), false);
+        return;
+      }
+
+      try {
+        const os = detectOS();
+        const browser = detectBrowser();
+        const timestamp = Date.now();
+
+        const tokenData = `${email}:${os}:${browser}:${timestamp}`;
+        const token = btoa(tokenData);
+
+        // Store auth info in localStorage
+        localStorage.setItem("auth_token", token);
+        localStorage.setItem("auth_email", email);
+        localStorage.setItem("auth_os", os);
+        localStorage.setItem("auth_browser", browser);
+        localStorage.setItem("auth_time", timestamp.toString());
+
+        // Log success
+        await logAttempt(email, os, browser, true);
+
+        // Redirect to protected page without token in URL
+        window.location.href = `https://rock-a-thon2025.framer.website/${os}`;
+
+      } catch (error) {
+        console.error(error);
+        document.getElementById("errorMsg").textContent = "Login failed. Please try again.";
+        await logAttempt(email, detectOS(), detectBrowser(), false);
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("loginForm").addEventListener("submit", handleLogin);
+    });
+  </script>
 
   <style>
     body {
@@ -41,96 +157,6 @@
       margin-top: 1em;
     }
   </style>
-
-  <script>
-    // Your Firebase config - replace with your real config
-    const firebaseConfig = {
-      apiKey: "AIzaSyC4tOkLBI1WOFVwWmvIYV4MJ6RotvL1Rhk",
-      authDomain: "ocms-rock-a-thon.firebaseapp.com",
-      projectId: "ocms-rock-a-thon",
-      storageBucket: "ocms-rock-a-thon.firebasestorage.app",
-      messagingSenderId: "1073365080543",
-      appId: "1:1073365080543:web:02ee17b6576709d89a4c6a",
-      measurementId: "G-R47NH1FWWV"
-    };
-
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-
-    function detectOS() {
-      const ua = navigator.userAgent.toLowerCase();
-      if (ua.includes("cros")) return "chromebook";
-      if (/android|iphone|ipad|ipod/.test(ua)) return "mobile";
-      return "desktop";
-    }
-
-    function isStudentEmail(email) {
-      const localPart = email.split("@")[0];
-      return /\d/.test(localPart); // true if local part contains a number
-    }
-
-    function validateEmailDomain(email) {
-      return email.endsWith("@oconeeschools.org"); // replace with your domain
-    }
-
-    async function handleLogin(event) {
-      event.preventDefault();
-
-      // Clear any previous error
-      document.getElementById("errorMsg").textContent = "";
-
-      // Get inputs
-      const email = document.getElementById("email").value.trim();
-      const captchaToken = document.querySelector('[name="cf-turnstile-response"]').value;
-
-      // Validate CAPTCHA
-      if (!captchaToken) {
-        document.getElementById("errorMsg").textContent = "Please complete the CAPTCHA.";
-        return;
-      }
-
-      // Validate email domain
-      if (!validateEmailDomain(email)) {
-        document.getElementById("errorMsg").textContent = "Access denied: Please use your school email.";
-        return;
-      }
-
-      // Validate student email (local part contains number)
-      if (!isStudentEmail(email)) {
-        document.getElementById("errorMsg").textContent = "Access denied: Teachers are disallowed.";
-        return;
-      }
-
-      try {
-        // Removed password login - you can replace this with another Firebase method if needed
-        // For now, simulate successful login or handle anonymous sign-in if needed
-        // e.g. await auth.signInAnonymously();
-
-        // Generate token
-        const os = detectOS();
-        const timestamp = Date.now();
-        const tokenData = `${email}:${os}:${timestamp}`;
-        const token = btoa(tokenData);
-
-        // Store token and info in localStorage
-        localStorage.setItem("auth_token", token);
-        localStorage.setItem("auth_email", email);
-        localStorage.setItem("auth_os", os);
-        localStorage.setItem("auth_time", timestamp.toString());
-
-        // Redirect to protected page WITHOUT token in URL
-        window.location.href = `https://rock-a-thon2025.framer.website/${os}`;
-
-      } catch (error) {
-        document.getElementById("errorMsg").textContent = "Login failed. Please try again.";
-      }
-    }
-
-    window.addEventListener("DOMContentLoaded", () => {
-      document.getElementById("loginForm").addEventListener("submit", handleLogin);
-    });
-  </script>
 </head>
 
 <body>
