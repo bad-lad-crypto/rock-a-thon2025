@@ -4,128 +4,12 @@
   <meta charset="UTF-8" />
   <title>Student Email Login</title>
 
-  <!-- Cloudflare Turnstile CAPTCHA -->
+  <!-- Cloudflare Turnstile -->
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 
-  <!-- Firebase SDK -->
-  <script type="module">
-    // Import Firebase modules
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-    // Your Firebase config here
-    const firebaseConfig = {
-  apiKey: "AIzaSyC4tOkLBI1WOFVwWmvIYV4MJ6RotvL1Rhk",
-  authDomain: "ocms-rock-a-thon.firebaseapp.com",
-  projectId: "ocms-rock-a-thon",
-  storageBucket: "ocms-rock-a-thon.firebasestorage.app",
-  messagingSenderId: "1073365080543",
-  appId: "1:1073365080543:web:02ee17b6576709d89a4c6a",
-  measurementId: "G-R47NH1FWWV"
-    };
-
-    // Initialize Firebase and Firestore
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    function detectOS() {
-      const ua = navigator.userAgent.toLowerCase();
-      if (ua.includes("cros")) return "chromebook";
-      if (/android|iphone|ipad|ipod/.test(ua)) return "mobile";
-      return "desktop";
-    }
-
-    function detectBrowser() {
-      const ua = navigator.userAgent;
-      if (ua.includes("Firefox")) return "Firefox";
-      if (ua.includes("Edg")) return "Edge";
-      if (ua.includes("OPR") || ua.includes("Opera")) return "Opera";
-      if (ua.includes("Chromium")) return "Chromium"; // Added Chromium detection
-      if (ua.includes("Chrome")) return "Chrome";
-      if (ua.includes("Safari")) return "Safari";
-      return "Unknown";
-    }
-
-    function isStudentEmail(email) {
-      const localPart = email.split("@")[0];
-      return /\d/.test(localPart); // true if local part contains a number
-    }
-
-    function validateEmailDomain(email) {
-      return email.endsWith("@oconeeschools.org"); // Replace with your domain
-    }
-
-    async function logAttempt(email, os, browser, success) {
-      try {
-        await addDoc(collection(db, "login_attempts"), {
-          email: email,
-          os: os,
-          browser: browser,
-          success: success,
-          timestamp: serverTimestamp()
-        });
-      } catch (e) {
-        console.error("Error logging attempt: ", e);
-      }
-    }
-
-    async function handleLogin(event) {
-      event.preventDefault();
-
-      document.getElementById("errorMsg").textContent = "";
-
-      const email = document.getElementById("email").value.trim();
-      const captchaToken = document.querySelector('[name="cf-turnstile-response"]').value;
-
-      if (!captchaToken) {
-        document.getElementById("errorMsg").textContent = "Please complete the CAPTCHA.";
-        return;
-      }
-
-      if (!validateEmailDomain(email)) {
-        document.getElementById("errorMsg").textContent = "Access denied: Please use your school email.";
-        await logAttempt(email, detectOS(), detectBrowser(), false);
-        return;
-      }
-
-      if (!isStudentEmail(email)) {
-        document.getElementById("errorMsg").textContent = "Access denied: Teachers are disallowed.";
-        await logAttempt(email, detectOS(), detectBrowser(), false);
-        return;
-      }
-
-      try {
-        const os = detectOS();
-        const browser = detectBrowser();
-        const timestamp = Date.now();
-
-        const tokenData = `${email}:${os}:${browser}:${timestamp}`;
-        const token = btoa(tokenData);
-
-        // Store auth info in localStorage
-        localStorage.setItem("auth_token", token);
-        localStorage.setItem("auth_email", email);
-        localStorage.setItem("auth_os", os);
-        localStorage.setItem("auth_browser", browser);
-        localStorage.setItem("auth_time", timestamp.toString());
-
-        // Log success
-        await logAttempt(email, os, browser, true);
-
-        // Redirect to protected page without token in URL
-        window.location.href = `https://rock-a-thon2025.framer.website/${os}`;
-
-      } catch (error) {
-        console.error(error);
-        document.getElementById("errorMsg").textContent = "Login failed. Please try again.";
-        await logAttempt(email, detectOS(), detectBrowser(), false);
-      }
-    }
-
-    window.addEventListener("DOMContentLoaded", () => {
-      document.getElementById("loginForm").addEventListener("submit", handleLogin);
-    });
-  </script>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
 
   <style>
     body {
@@ -157,6 +41,105 @@
       margin-top: 1em;
     }
   </style>
+
+  <script>
+    // ✅ Firebase config — replace with your actual config
+    const firebaseConfig = {
+  apiKey: "AIzaSyC4tOkLBI1WOFVwWmvIYV4MJ6RotvL1Rhk",
+  authDomain: "ocms-rock-a-thon.firebaseapp.com",
+  projectId: "ocms-rock-a-thon",
+  storageBucket: "ocms-rock-a-thon.firebasestorage.app",
+  messagingSenderId: "1073365080543",
+  appId: "1:1073365080543:web:02ee17b6576709d89a4c6a",
+  measurementId: "G-R47NH1FWWV"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    function detectOS() {
+      const ua = navigator.userAgent.toLowerCase();
+      if (ua.includes("cros")) return "chromebook";
+      if (/android|iphone|ipad|ipod/.test(ua)) return "mobile";
+      return "desktop";
+    }
+
+    function detectBrowser() {
+      const ua = navigator.userAgent;
+      if (ua.includes("Edg/")) return "Edge";
+      if (ua.includes("Chrome/") && !ua.includes("Chromium")) return "Chrome";
+      if (ua.includes("Chromium")) return "Chromium";
+      if (ua.includes("Firefox/")) return "Firefox";
+      if (ua.includes("Safari/") && !ua.includes("Chrome")) return "Safari";
+      return "Other";
+    }
+
+    function isStudentEmail(email) {
+      return /\d/.test(email.split("@")[0]);
+    }
+
+    function validateEmailDomain(email) {
+      return email.endsWith("@oconeeschools.org"); // 🔁 Replace with your domain
+    }
+
+    async function handleLogin(event) {
+      event.preventDefault();
+      document.getElementById("errorMsg").textContent = "";
+
+      const email = document.getElementById("email").value.trim();
+      const captchaToken = document.querySelector('[name="cf-turnstile-response"]').value;
+      const os = detectOS();
+      const browser = detectBrowser();
+      const timestamp = new Date();
+      let success = false;
+      let token = null;
+
+      if (!captchaToken) {
+        document.getElementById("errorMsg").textContent = "Please complete the CAPTCHA.";
+        return;
+      }
+
+      if (!validateEmailDomain(email)) {
+        document.getElementById("errorMsg").textContent = "Access denied: Use your school email.";
+      } else if (!isStudentEmail(email)) {
+        document.getElementById("errorMsg").textContent = "Access denied: Teachers not allowed.";
+      } else {
+        success = true;
+        const raw = `${email}:${os}:${timestamp.getTime()}`;
+        token = btoa(raw);
+
+        // ✅ Store to localStorage
+        localStorage.setItem("auth_token", token);
+        localStorage.setItem("auth_email", email);
+        localStorage.setItem("auth_os", os);
+        localStorage.setItem("auth_browser", browser);
+        localStorage.setItem("auth_time", timestamp.toISOString());
+
+        // ✅ Redirect after short delay
+        setTimeout(() => {
+          window.location.href = `https://rock-a-thon2025.framer.website/${os}`;
+        }, 1500);
+      }
+
+      // 🔐 Store attempt in Firestore
+      try {
+        await db.collection("login_attempts").add({
+          email,
+          os,
+          browser,
+          timestamp: firebase.firestore.Timestamp.fromDate(timestamp),
+          success,
+          tokenHash: token || null
+        });
+      } catch (err) {
+        console.error("❌ Firestore write failed:", err);
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("loginForm").addEventListener("submit", handleLogin);
+    });
+  </script>
 </head>
 
 <body>
@@ -164,11 +147,8 @@
   <p>Enter your school email to continue</p>
 
   <form id="loginForm">
-    <input type="email" id="email" placeholder="your.email@oconeeschools.org" required autocomplete="username" />
-
-    <!-- Cloudflare CAPTCHA widget -->
+    <input type="email" id="email" placeholder="your.email@oconeeschools.org" required />
     <div class="cf-turnstile" data-sitekey="0x4AAAAAABmxgUOcsKS-XbyN" data-theme="light"></div>
-
     <button type="submit">Authenticate</button>
   </form>
 
