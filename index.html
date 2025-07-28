@@ -62,9 +62,10 @@
       const os = detectOS();
       const token = btoa(email + ":" + os + ":" + Date.now());
 
-      sessionStorage.setItem("auth_token", token);
-      sessionStorage.setItem("auth_email", email);
-      sessionStorage.setItem("auth_os", os);
+localStorage.setItem("auth_token", token);
+localStorage.setItem("auth_email", email);
+localStorage.setItem("auth_os", os);
+
 
       // 🔁 Redirect to your Framer site or similar
       window.location.href = `https://rock-a-thon2025.framer.website/${os}?token=${encodeURIComponent(token)}`;
