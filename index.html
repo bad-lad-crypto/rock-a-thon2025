@@ -2,15 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Student Email Login</title>
-
-  <!-- Cloudflare Turnstile -->
-  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
-
+  <title>Secure Login</title>
   <style>
     body {
       font-family: sans-serif;
@@ -18,13 +10,16 @@
       text-align: center;
       padding: 3em;
     }
-    form {
+
+    form, #dynamicArea {
       display: inline-block;
       background: white;
       padding: 2em;
       border-radius: 10px;
       box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
+      margin-bottom: 2em;
     }
+
     input, button {
       display: block;
       margin: 1em auto;
@@ -32,126 +27,126 @@
       width: 280px;
       font-size: 1em;
     }
-    .cf-turnstile {
-      margin: 1em auto;
-    }
+
     #errorMsg {
       color: red;
       font-weight: bold;
       margin-top: 1em;
     }
+
+    #instructionsOverlay {
+      display: none;
+      position: fixed;
+      top: 10%;
+      left: 10%;
+      width: 80%;
+      height: 70%;
+      background: white;
+      border: 2px solid #ccc;
+      box-shadow: 0 0 20px rgba(0,0,0,0.2);
+      padding: 1.5em;
+      overflow-y: auto;
+      z-index: 1000;
+    }
+
+    #overlayClose {
+      position: absolute;
+      top: 1em;
+      right: 1em;
+      cursor: pointer;
+      font-size: 1.2em;
+      font-weight: bold;
+    }
+
+    #instructionsBtn {
+      margin-top: 2em;
+      cursor: pointer;
+      color: #007bff;
+      text-decoration: underline;
+      background: none;
+      border: none;
+      font-size: 1em;
+    }
+
+    #externalLink {
+      margin-top: 2em;
+      display: block;
+      color: #0055cc;
+      font-weight: bold;
+      text-decoration: none;
+    }
   </style>
-
-  <script>
-    // ✅ Firebase config — replace with your actual config
-    const firebaseConfig = {
-  apiKey: "AIzaSyC4tOkLBI1WOFVwWmvIYV4MJ6RotvL1Rhk",
-  authDomain: "ocms-rock-a-thon.firebaseapp.com",
-  projectId: "ocms-rock-a-thon",
-  storageBucket: "ocms-rock-a-thon.firebasestorage.app",
-  messagingSenderId: "1073365080543",
-  appId: "1:1073365080543:web:02ee17b6576709d89a4c6a",
-  measurementId: "G-R47NH1FWWV"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-
-    function detectOS() {
-      const ua = navigator.userAgent.toLowerCase();
-      if (ua.includes("cros")) return "chromebook";
-      if (/android|iphone|ipad|ipod/.test(ua)) return "mobile";
-      return "desktop";
-    }
-
-    function detectBrowser() {
-      const ua = navigator.userAgent;
-      if (ua.includes("Edg/")) return "Edge";
-      if (ua.includes("Chrome/") && !ua.includes("Chromium")) return "Chrome";
-      if (ua.includes("Chromium")) return "Chromium";
-      if (ua.includes("Firefox/")) return "Firefox";
-      if (ua.includes("Safari/") && !ua.includes("Chrome")) return "Safari";
-      return "Other";
-    }
-
-    function isStudentEmail(email) {
-      return /\d/.test(email.split("@")[0]);
-    }
-
-    function validateEmailDomain(email) {
-      return email.endsWith("@oconeeschools.org"); // 🔁 Replace with your domain
-    }
-
-    async function handleLogin(event) {
-      event.preventDefault();
-      document.getElementById("errorMsg").textContent = "";
-
-      const email = document.getElementById("email").value.trim();
-      const captchaToken = document.querySelector('[name="cf-turnstile-response"]').value;
-      const os = detectOS();
-      const browser = detectBrowser();
-      const timestamp = new Date();
-      let success = false;
-      let token = null;
-
-      if (!captchaToken) {
-        document.getElementById("errorMsg").textContent = "Please complete the CAPTCHA.";
-        return;
-      }
-
-      if (!validateEmailDomain(email)) {
-        document.getElementById("errorMsg").textContent = "Access denied: Use your school email.";
-      } else if (!isStudentEmail(email)) {
-        document.getElementById("errorMsg").textContent = "Access denied: Teachers not allowed.";
-      } else {
-        success = true;
-        const raw = `${email}:${os}:${timestamp.getTime()}`;
-        token = btoa(raw);
-
-        // ✅ Store to localStorage
-        localStorage.setItem("auth_token", token);
-        localStorage.setItem("auth_email", email);
-        localStorage.setItem("auth_os", os);
-        localStorage.setItem("auth_browser", browser);
-        localStorage.setItem("auth_time", timestamp.toISOString());
-
-        // ✅ Redirect after short delay
-        setTimeout(() => {
-          window.location.href = `https://rock-a-thon2025.framer.website/${os}`;
-        }, 1500);
-      }
-
-      // 🔐 Store attempt in Firestore
-      try {
-        await db.collection("login_attempts").add({
-          email,
-          os,
-          browser,
-          timestamp: firebase.firestore.Timestamp.fromDate(timestamp),
-          success,
-          tokenHash: token || null
-        });
-      } catch (err) {
-        console.error("❌ Firestore write failed:", err);
-      }
-    }
-
-    window.addEventListener("DOMContentLoaded", () => {
-      document.getElementById("loginForm").addEventListener("submit", handleLogin);
-    });
-  </script>
 </head>
-
 <body>
-  <h1>Email Authentication Required</h1>
+  <h1>Secure Access Portal</h1>
   <p>Enter your school email to continue</p>
 
   <form id="loginForm">
-    <input type="email" id="email" placeholder="your.email@oconeeschools.org" required />
-    <div class="cf-turnstile" data-sitekey="0x4AAAAAABmxgUOcsKS-XbyN" data-theme="light"></div>
+    <input type="email" id="email" placeholder="your.email@school.org" required />
     <button type="submit">Authenticate</button>
   </form>
 
   <div id="errorMsg"></div>
+
+  <!-- Admin interface will be inserted here -->
+  <div id="dynamicArea"></div>
+
+  <!-- Instruction Overlay -->
+  <button id="instructionsBtn">View Instructions</button>
+
+  <div id="instructionsOverlay">
+    <div id="overlayClose">✕</div>
+    <h2>Instructions</h2>
+    <p>Welcome to the secure login portal.</p>
+    <ul>
+      <li>Students: Enter your school email to proceed.</li>
+      <li>Admins: Enter your admin access email to unlock additional fields.</li>
+      <li>Admins must upload their secure key file.</li>
+    </ul>
+  </div>
+
+  <!-- External Link -->
+  <a href="https://example.com/help" id="externalLink" target="_blank">Visit Help Center</a>
+
+  <script>
+    const loginForm = document.getElementById("loginForm");
+    const dynamicArea = document.getElementById("dynamicArea");
+    const errorMsg = document.getElementById("errorMsg");
+
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      errorMsg.textContent = "";
+      const email = document.getElementById("email").value.trim();
+
+      try {
+        const res = await fetch("/check-access", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email })
+        });
+
+        const data = await res.json();
+
+        if (data.allowAdmin && data.adminHtml) {
+          dynamicArea.innerHTML = data.adminHtml;
+        } else if (data.allowUser) {
+          alert("Standard user access granted.");
+        } else {
+          errorMsg.textContent = data.message || "Access denied.";
+        }
+      } catch (err) {
+        console.error(err);
+        errorMsg.textContent = "Error contacting server.";
+      }
+    });
+
+    // Instruction Overlay Logic
+    const instructionsBtn = document.getElementById("instructionsBtn");
+    const overlay = document.getElementById("instructionsOverlay");
+    const overlayClose = document.getElementById("overlayClose");
+
+    instructionsBtn.addEventListener("click", () => overlay.style.display = "block");
+    overlayClose.addEventListener("click", () => overlay.style.display = "none");
+  </script>
 </body>
 </html>
