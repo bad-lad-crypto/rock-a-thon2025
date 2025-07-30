@@ -2,17 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Student Email Login with Blocklist</title>
+  <title>Student Email Login</title>
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <style>
     body { font-family: sans-serif; background: #f5f5f5; text-align: center; padding: 3em; }
-    form { background: white; padding: 2em; border-radius:10px; box-shadow: 0 0 12px rgba(0,0,0,0.1); display:inline-block; }
+    form { background: white; padding: 2em; border-radius:10px; box-shadow:0 0 12px rgba(0,0,0,0.1); display:inline-block; }
     input, button { display:block; margin:1em auto; padding:.75em; width:280px; font-size:1em; }
+    .cf-turnstile { margin:1em auto; }
     #errorMsg { color:red; font-weight:bold; margin-top:1em; }
-    #instructionsBtn { margin-top:2em; background:none; border:none; color:#007bff; cursor:pointer; text-decoration:underline; }
-    #instructionsOverlay { display:none; position:fixed; top:10%;left:10%;width:80%;height:70%;background:white; padding:1.5em; overflow:auto; z-index:1000; border:2px solid #ccc; box-shadow:0 0 20px rgba(0,0,0,0.2); }
-    #overlayClose { position:absolute; top:1em; right:1em; cursor:pointer; font-size:1.2em; font-weight:bold; }
-    #externalLink { margin-top:2em; display:block; color:#0055cc; font-weight:bold; text-decoration:none; }
+    #instructionsBtn { margin-top:2em; background:none; border:none; color:#007bff; cursor:pointer; text-decoration:underline;}
+    #instructionsOverlay { display:none; position:fixed; top:10%;left:10%;width:80%;height:70%;background:white; padding:1.5em; overflow:auto; z-index:1000; border:2px solid #ccc; box-shadow:0 0 20px rgba(0,0,0,0.2);}
+    #overlayClose { position:absolute; top:1em; right:1em; cursor:pointer; font-size:1.2em; font-weight:bold;}
+    #externalLink { margin-top:2em; display:block; color:#0055cc; font-weight:bold; text-decoration:none;}
   </style>
 </head>
 <body>
@@ -33,7 +34,7 @@
     <div id="overlayClose">✕</div>
     <h2>Instructions</h2>
     <p>To log in, enter your school email and complete the CAPTCHA.</p>
-    <p>Admins use their access PIN as email — admin inputs will appear after validation.</p>
+    <p>Admins use their access PIN instead of an email — admin fields will appear after validation.</p>
   </div>
 
   <a href="https://example.com/help" id="externalLink" target="_blank" rel="noopener noreferrer">Visit Help Center</a>
@@ -45,6 +46,7 @@
     document.getElementById("overlayClose").addEventListener("click", () => {
       document.getElementById("instructionsOverlay").style.display = "none";
     });
+
     document.getElementById("loginForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       document.getElementById("errorMsg").textContent = "";
@@ -58,19 +60,20 @@
       }
 
       try {
-        const response = await fetch("/api/login", {
+        const resp = await fetch("/api/login", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {"Content-Type": "application/json"},
           body: JSON.stringify({ email, captcha })
         });
-        const json = await response.json();
+        const json = await resp.json();
 
         if (json.status === "access_granted") {
           window.location.href = json.redirect;
         } else if (json.status === "show_admin") {
-          // Optionally load admin inputs dynamically if needed
+          // You can fetch and insert admin inputs here if that flow is needed
         } else {
           document.getElementById("errorMsg").textContent = json.message || "Access denied.";
+          turnstile.reset(); // reset Turnstile widget
         }
       } catch (err) {
         console.error(err);
